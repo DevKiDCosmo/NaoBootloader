@@ -317,6 +317,15 @@ main() {
     print_info "Scanning for USB devices..."
     mapfile -t USB_DEVICES < <(detect_usb_devices)
     
+    # Remove empty elements from array
+    local temp_devices=()
+    for device in "${USB_DEVICES[@]}"; do
+        if [ -n "$device" ]; then
+            temp_devices+=("$device")
+        fi
+    done
+    USB_DEVICES=("${temp_devices[@]}")
+    
     # Display available devices
     display_usb_devices
     
