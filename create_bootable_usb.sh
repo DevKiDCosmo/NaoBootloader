@@ -60,12 +60,14 @@ detect_usb_devices() {
     local devices=()
     
     # Check removable devices in /sys/block
+    shopt -s nullglob  # Enable nullglob to handle no matches gracefully
     for dev in /sys/block/sd* /sys/block/nvme*; do
         if [ -e "$dev/removable" ] && [ "$(cat "$dev/removable")" = "1" ]; then
             device_name=$(basename "$dev")
             devices+=("/dev/$device_name")
         fi
     done
+    shopt -u nullglob  # Disable nullglob
     
     # Also check for devices that might be USB using lsblk
     if command -v lsblk >/dev/null 2>&1; then
@@ -78,7 +80,7 @@ detect_usb_devices() {
         done < <(lsblk -ndo NAME,TRAN 2>/dev/null | grep "usb" | awk '{print $1}')
     fi
     
-    echo "${devices[@]}"
+    printf '%s\n' "${devices[@]}"
 }
 
 # Function to display available USB devices
@@ -174,18 +176,31 @@ format_device() {
     # Wipe existing partition table
     dd if=/dev/zero of="$device" bs=512 count=1 conv=notrunc 2>/dev/null
     
-    # Create new MBR partition table with a single bootable partition
+    # Create new MBR partition table with a single bootable partition using sfdisk for reliability
     print_info "Creating bootable partition..."
-    (
-        echo o      # Create a new empty DOS partition table
-        echo n      # Add a new partition
-        echo p      # Primary partition
-        echo 1      # Partition number
-        echo        # First sector (default)
-        echo        # Last sector (default)
-        echo a      # Make partition bootable
-        echo w      # Write changes
-    ) | fdisk "$device" >/dev/null 2>&1
+    
+    # Try sfdisk first (more reliable for scripting)
+    if command -v sfdisk >/dev/null 2>&1; then
+        echo "type=c, bootable" | sfdisk "$device" >/dev/null 2>&1
+    else
+        # Fallback to fdisk
+        (
+            echo o      # Create a new empty DOS partition table
+            echo n      # Add a new partition
+            echo p      # Primary partition
+            echo 1      # Partition number
+            echo        # First sector (default)
+            echo        # Last sector (default)
+            echo a      # Make partition bootable
+            echo w      # Write changes
+        ) | fdisk "$device" >/dev/null 2>&1
+        
+        # Check fdisk exit status
+        if [ ${PIPESTATUS[1]} -ne 0 ]; then
+            print_error "Failed to create partition table with fdisk"
+            exit 1
+        fi
+    fi
     
     # Wait for partition to be created
     sleep 2
@@ -217,9 +232,19 @@ install_bootloader() {
     
     print_info "Installing bootloader to $device..."
     
+    # Validate bootloader size
+    local bootloader_size=$(stat -c%s "$BOOTLOADER_BIN")
+    if [ "$bootloader_size" -gt 446 ]; then
+        print_error "Bootloader binary is too large ($bootloader_size bytes)"
+        print_error "Bootloader must be 446 bytes or smaller to fit in MBR"
+        exit 1
+    fi
+    
+    print_info "Bootloader size: $bootloader_size bytes (max: 446 bytes)"
+    
     # Write bootloader to the MBR (first 446 bytes)
     # Note: This is a simplified approach. Real bootloaders may need more sophisticated installation
-    dd if="$BOOTLOADER_BIN" of="$device" bs=446 count=1 conv=notrunc 2>/dev/null
+    dd if="$BOOTLOADER_BIN" of="$device" bs=1 count="$bootloader_size" conv=notrunc 2>/dev/null
     
     print_info "Bootloader written to MBR"
     
@@ -290,7 +315,7 @@ main() {
     
     # Detect USB devices
     print_info "Scanning for USB devices..."
-    USB_DEVICES=($(detect_usb_devices))
+    mapfile -t USB_DEVICES < <(detect_usb_devices)
     
     # Display available devices
     display_usb_devices
