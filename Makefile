@@ -8,7 +8,7 @@ ASFLAGS = -f bin
 
 all: example-binaries
 
-example-binaries: bootloader.bin kernel.bin
+example-binaries: bootloader.bin stage2.bin kernel.bin
 
 bootloader.bin: bootloader.asm
 	@echo "Building bootloader..."
@@ -19,6 +19,17 @@ bootloader.bin: bootloader.asm
 		echo "Warning: nasm not found, creating dummy bootloader binary"; \
 		dd if=/dev/zero of=$@ bs=512 count=1 2>/dev/null; \
 		echo "Dummy bootloader created"; \
+	fi
+
+stage2.bin: stage2.asm
+	@echo "Building stage 2 loader..."
+	@if command -v $(AS) >/dev/null 2>&1; then \
+		$(AS) $(ASFLAGS) -o $@ $<; \
+		echo "Stage 2 loader built successfully"; \
+	else \
+		echo "Warning: nasm not found, creating dummy stage2 binary"; \
+		dd if=/dev/zero of=$@ bs=1024 count=1 2>/dev/null; \
+		echo "Dummy stage2 created"; \
 	fi
 
 kernel.bin: kernel.asm
@@ -34,5 +45,5 @@ kernel.bin: kernel.asm
 
 clean:
 	@echo "Cleaning build artifacts..."
-	@rm -f bootloader.bin kernel.bin
+	@rm -f bootloader.bin stage2.bin kernel.bin
 	@echo "Clean complete"
