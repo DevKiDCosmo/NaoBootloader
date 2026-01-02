@@ -154,7 +154,7 @@ flowchart TD
     K --> M[Simple Kernel/Shell<br/>16-bit real mode]
     L --> N[Parse ELF Headers<br/>Load segments]
     
-    N --> O[Stage 4: OSShell<br/>ELF Binary @ Variable]
+    N --> O[Stage 4: OS *Secure* Shell<br/>ELF Binary @ Variable]
     
     O --> P[Initialize Environment<br/>Load Sub Kernel]
     P --> Q[Stage 5: Sub Kernel<br/>Core Services]
@@ -163,15 +163,17 @@ flowchart TD
     R --> S[Operating System Running]
     
     M --> T[Limited Shell<br/>Test Environment]
+    T --> TA[Execution Methods</br>for Secure Loading with TPM Stage 3]
     
     style A fill:#e1f5ff
     style G fill:#ffeb99
     style I fill:#ffeb99
     style L fill:#ffeb99
-    style O fill:#b3e5b3
-    style Q fill:#b3e5b3
-    style R fill:#b3e5b3
-    style S fill:#90ee90
+    style O fill:#b315b3
+    style Q fill:#b315b3
+    style R fill:#b315b3
+    style S fill:#201e90
+    style TA fill:#F24232
 ```
 
 ---
