@@ -261,4 +261,6 @@ Data Partitions
    - Create UEFI bootloader
    - Utilize UEFI services
    - Hybrid BIOS/EFI support
-```
+  
+
+Add IDT
