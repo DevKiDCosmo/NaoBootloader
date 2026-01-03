@@ -146,8 +146,19 @@ flowchart TD
     
     G --> H[Load Stage 2<br/>from sectors 2-3]
     H --> I[Stage 2: Extended Loader<br/>1KB @ 0x7E00]
-    
-    I --> J{Payload Type?}
+
+    I --> U{Boot Policy?}
+    U -->|Standard Boot| J{Payload Type?}
+    U -->|Secure Boot| V[Verify Signature / TPM]
+    V -->|Valid| J
+    V -->|Tampered| W[Tampered Boot Detected]
+    W --> X{Recovery Available?}
+    X -->|Yes| Y[Recovery Boot Image]
+    X -->|No| Z[Halt / Operator Action]
+    Z --> HA{Recovery Shell?}
+    HA --> |Exist| AS[Run in Protected Mode]
+    HA --> |Non| AK[Printing Error]
+
     J -->|Raw Binary| K[Load to 0x10000<br/>Jump directly]
     J -->|ELF Binary| L[Load Stage 3<br/>ELF Loader]
     
@@ -164,11 +175,12 @@ flowchart TD
     
     M --> T[Limited Shell<br/>Test Environment]
     T --> TA[Execution Methods</br>for Secure Loading with TPM Stage 3]
+    Y --> P
     
     style A fill:#e1f5ff
-    style G fill:#ffeb99
-    style I fill:#ffeb99
-    style L fill:#ffeb99
+    style G fill:#004f99
+    style I fill:#004f99
+    style L fill:#004f99
     style O fill:#b315b3
     style Q fill:#b315b3
     style R fill:#b315b3
