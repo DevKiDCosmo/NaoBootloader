@@ -137,12 +137,19 @@ flowchart TD
     A[Power On] --> B{Firmware Type?}
     B -->|BIOS| C[BIOS POST]
     B -->|EFI| D[UEFI Firmware]
+    B -->|Nao| NAOFIRM[Nao Firmware]
+
+   NAOFIRM --> NAOFIRM2[Load from NaoConfig Files]
+   NAOFIRM2 --> LOADER[Stage 0: Bootloader 10240 bytes @ Sector 1024+]
     
     C --> E[Load MBR Sector 0<br/>to 0x7C00]
     D --> F[Load EFI Bootloader<br/>from ESP]
     
     E --> G[Stage 1: Bootloader<br/>512 bytes @ 0x7C00]
-    F --> G
+    F --> ARCH[Stage 1: Arch Specific Bootloader<br/>512 bytes @ Variable]
+    ARCH --> H
+
+
     
     G --> H[Load Stage 2<br/>from sectors 2-3]
     H --> I[Stage 2: Extended Loader<br/>1KB @ 0x7E00]
@@ -178,6 +185,8 @@ flowchart TD
     Y --> P
     
     style A fill:#e1f5ff
+    style LOADER fill:#f04f99
+    style ARCH fill:#004f99
     style G fill:#004f99
     style I fill:#004f99
     style L fill:#004f99
@@ -188,10 +197,31 @@ flowchart TD
     style TA fill:#F24232
 ```
 
+Adding a step for calculating the DISK hash against tampering and more. Create also parities of partition or sectors and don't save them in the TPM. The TPM might have not enough space to space that many DISK hash and etc.
+
+By shutting down the PC or device new difference should be calculated and new HASHES of only changes sectors are created.
+
+To save space we can use differenciation math.
+
+Stage 4 is for verifying the HASHES. Stage 1 - 3 are protected by Secure Boot. The boot stages should be zero day free through making secure related stuff in Stage 4 instead in Stage 3. Stage 3 can do also the ops in Stage 4 if Stage 3 is started with Secure Boot.
+
+Secure Boot can also begin with the Stage 1 in UEFI instead checking it after Stage 2.
+
+Encryption can also be done.
+
+Parities are always created for secure concerns.
+
+Nao Bootloader can also be like GRUB for booting to multiple OS.
+
+Scripts should also be implemented that controls time etc.
+
+There should be two access point then for the Bootloader Manager of Nao. First the Immediately Entry for direct use of Operation System and the second booting point to booting to booting manager.
+
 ---
 
 ## Memory Layout
 
+### Real Mode / Initial Boot (16-bit)
 ```
 0x00000000 - 0x000003FF : Real Mode IVT (Interrupt Vector Table)
 0x00000400 - 0x000004FF : BIOS Data Area
@@ -199,12 +229,22 @@ flowchart TD
 0x00007C00 - 0x00007DFF : Stage 1 Bootloader (512 bytes)
 0x00007E00 - 0x00007FFF : Stage 2 Loader (512 bytes)
 0x00008000 - 0x00009FFF : Stack space
-0x0000A000 - 0x0000FFFF : Free for Stage 2 use
+0x0000A000 - 0x0000BFFF : GDT/IDT for Protected Mode transition (8KB)
+0x0000C000 - 0x0000FFFF : Free / Recovery Boot Image (16KB)
 0x00010000 - 0x0001FFFF : Stage 3/OSShell loaded here (64KB)
 0x00020000 - 0x0007FFFF : Kernel/Extended memory
 0x00080000 - 0x0009FFFF : Extended BIOS Data Area (EBDA)
 0x000A0000 - 0x000FFFFF : Video memory & ROM
 0x00100000+             : Extended memory (1MB+)
+```
+
+### Protected Mode / Long Mode (32-bit+)
+```
+0x00000000 - 0x000003FF : GDT Descriptors (can be remapped here)
+0x00000400 - 0x000004FF : IDT Descriptors (256 interrupt gates × ~8 bytes = 2KB)
+0x00000500 - 0x00007BFF : Free / Exception handlers
+0x00007C00+             : Kernel code/data sections (relocated from real mode)
+0x00100000+             : Extended memory (paged memory management)
 ```
 
 ---
@@ -217,7 +257,10 @@ flowchart TD
 Sector 0:       Stage 1 Bootloader (512 bytes)
 Sector 1:       [Reserved]
 Sectors 2-3:    Stage 2 Loader (1KB)
-Sectors 4+:     Kernel/OSShell payload (up to 40KB with current loader)
+Sectors 4-63:   Standard Boot Payload (30KB) - Kernel/OSShell (raw or ELF)
+Sectors 64-95:  Secure Boot Signatures & TPM Data (16KB)
+Sectors 96-127: Recovery Boot Image (16KB) - Minimal kernel for recovery
+Sectors 128+:   Recovery Shell / Flashing Tool (variable) - Write/Flash OS anew
 ```
 
 ### EFI Boot Disk
@@ -225,9 +268,13 @@ Sectors 4+:     Kernel/OSShell payload (up to 40KB with current loader)
 ```
 GPT Header
 EFI System Partition (FAT32)
-  └── /EFI/BOOT/BOOTX64.EFI    (Stage 1 EFI loader)
-  └── /stage2.bin               (Stage 2 loader)
-  └── /osshell.elf              (OSShell ELF binary)
+  ├── /EFI/BOOT/BOOTX64.EFI        (Stage 1 EFI loader)
+  ├── /EFI/BOOT/stage2.bin         (Stage 2 loader)
+  ├── /EFI/BOOT/osshell.elf        (OSShell ELF binary - Standard Boot)
+  ├── /EFI/BOOT/recovery.bin       (Recovery Boot Image)
+  ├── /EFI/BOOT/recovery_shell.bin (Recovery Shell / Flashing Tool)
+  ├── /EFI/BOOT/secure_boot.sig    (Secure Boot Signature)
+  └── /EFI/BOOT/tpm_data.bin       (TPM Measurement Data)
 Data Partitions
 ```
 
@@ -273,6 +320,3 @@ Data Partitions
    - Create UEFI bootloader
    - Utilize UEFI services
    - Hybrid BIOS/EFI support
-  
-
-Add IDT
