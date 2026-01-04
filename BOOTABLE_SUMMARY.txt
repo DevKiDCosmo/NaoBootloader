@@ -1,0 +1,204 @@
+================================================================================
+         NaoBootloader - Bootable Media Creation System (Complete)
+================================================================================
+
+✅ SUCCESSFULLY CREATED & INTEGRATED:
+
+1. THREE BOOTABLE MEDIA MODES:
+   ├─ BIOS Bootable    : sudo ./start.sh bootable  [Legacy Systems]
+   ├─ EFI Bootable     : sudo ./start.sh efi       [Modern Systems] 
+   └─ Hybrid Bootable  : sudo ./start.sh hybrid    [Universal - Recommended]
+
+2. NEW SCRIPTS:
+   ├─ create_hybrid_bootable.sh    (201 lines)  - Hybrid BIOS+EFI USB creator
+   └─ bootable_info.sh             (141 lines)  - Interactive guide & options
+
+3. DOCUMENTATION:
+   ├─ BOOTABLE_README.md           (Comprehensive Guide)
+   └─ BOOTABLE_SUMMARY.txt         (This File)
+
+4. INTEGRATION IN start.sh:
+   ├─ info   command   - Show bootable media options and guide
+   ├─ efi    command   - Create EFI bootable USB
+   ├─ hybrid command   - Create hybrid bootable USB
+   └─ bootable command - Create BIOS bootable USB (existing)
+
+================================================================================
+                           QUICK START COMMANDS
+================================================================================
+
+Build Bootloader:
+  $ ./start.sh build
+
+Create Bootable USB (Choose One):
+  $ sudo ./start.sh bootable    # For BIOS/Legacy systems
+  $ sudo ./start.sh efi         # For EFI/UEFI systems (MacBooks, Modern PCs)
+  $ sudo ./start.sh hybrid      # For both BIOS and EFI (Recommended)
+
+Get Detailed Guide:
+  $ ./start.sh info
+
+Show All Commands:
+  $ ./start.sh help
+
+================================================================================
+                         BOOTABLE MEDIA CREATION
+================================================================================
+
+MODE                 PARTITION TABLE    BEST FOR              COMPATIBILITY
+────────────────────────────────────────────────────────────────────────────────
+BIOS Bootable        MBR                Legacy Systems        2000-2010+
+EFI Bootable         GPT                Modern Systems        2010+ (MacBooks)
+Hybrid Bootable      Hybrid MBR/FAT32   Everything           ALL systems
+
+================================================================================
+                            SYSTEM REQUIREMENTS
+================================================================================
+
+Hardware:
+  • USB Drive (minimum 100MB)
+  • Bootable system with BIOS or UEFI
+
+Software (macOS):
+  • NASM (brew install nasm)
+  • QEMU optional (brew install qemu)
+
+Permissions:
+  • Root/sudo access required for USB operations
+  • Use: sudo ./start.sh [bootable|efi|hybrid]
+
+================================================================================
+                           PROJECT STRUCTURE
+================================================================================
+
+scripts/
+├── bootable_info.sh             ✨ NEW - Bootable media selection guide
+├── create_efi_bootable.sh        ✨ NEW - EFI bootable USB creator
+├── create_hybrid_bootable.sh     ✨ NEW - Hybrid bootable USB creator
+├── macos_bootable.sh            - BIOS bootable USB creator
+├── lib.sh                       - Shared logging library
+├── test_individual.sh           - Interactive component tests
+├── test_qemu.sh                 - Quick QEMU test
+├── test_slow.sh                 - Slow-motion QEMU debugging
+├── create_virtual_drive.sh      - Virtual USB drive creator
+├── inspect_virtual_drive.sh     - Virtual drive inspection
+├── cleanup_ghost_disks.sh       - Orphaned disk cleanup
+└── test_script.sh               - Legacy test script
+
+Root Files:
+├── start.sh                     - Main entry point (UPDATED)
+├── bootloader.asm               - Stage 1 bootloader
+├── stage2.asm                   - Stage 2 loader
+├── kernel.asm                   - Simple kernel
+├── bootloader.bin               - Compiled Stage 1
+├── stage2.bin                   - Compiled Stage 2
+├── kernel.bin                   - Compiled kernel
+├── BOOTABLE_README.md          ✨ NEW - Detailed bootable media guide
+├── BOOTABLE_SUMMARY.txt        ✨ NEW - This summary
+├── Makefile                     - Build configuration
+├── README.md                    - Project overview
+├── LICENSE                      - MIT License
+└── SECURITY.md                  - Security information
+
+================================================================================
+                        COMMAND REFERENCE
+================================================================================
+
+./start.sh build                 Build all bootloader components
+./start.sh clean                 Clean build artifacts
+./start.sh test [1-3]            Run component tests (interactive/specific)
+./start.sh slow                  Slow-motion QEMU debugging (50MHz)
+./start.sh qemu                  Quick QEMU test
+./start.sh virtual [SIZE]        Create virtual test drives
+./start.sh bootable              Create BIOS bootable USB (requires sudo)
+./start.sh efi                   Create EFI bootable USB (requires sudo)
+./start.sh hybrid                Create hybrid bootable USB (requires sudo)
+./start.sh info                  Show bootable media options and guide
+./start.sh inspect               Inspect virtual drive contents
+./start.sh cleanup               Clean up ghost disk images
+./start.sh status                Show project status
+./start.sh help                  Show help message
+
+================================================================================
+                         BOOT PROCESS FLOW
+================================================================================
+
+USB Insertion
+    ↓
+BIOS/UEFI Loads Stage 1 @ 0x7C00
+    ↓ (prints green [INIT] message)
+Stage 1 Loads Stage 2 from Sector 3 @ 0x7E00
+    ↓ (prints yellow [LOADING] message)
+Stage 2 Loads Kernel from Sector 5 @ 0x1000:0x0000
+    ↓ (prints cyan [SUCCESS] message)
+Kernel Takes Control & Shows Interactive Shell
+    ↓ (ready for input)
+
+================================================================================
+                         DEBUG & TESTING
+================================================================================
+
+For Development:
+  $ ./start.sh test              # Interactive test menu
+  $ ./start.sh test 1            # Test Stage 1 only
+  $ ./start.sh test 2            # Test Stage 1+2
+  $ ./start.sh test 3            # Full boot test
+
+For Debugging (Slow Motion):
+  $ ./start.sh slow              # Interactive speed selection
+                                 # 10MHz, 25MHz, 50MHz, 100MHz options
+
+For Quick Testing:
+  $ ./start.sh qemu              # Fast QEMU boot test
+
+================================================================================
+                            TROUBLESHOOTING
+================================================================================
+
+USB Device Not Recognized:
+  ✓ Try different USB port
+  ✓ Try different USB drive
+  ✓ Check BIOS boot order
+
+Permission Denied:
+  ✓ Use: sudo ./start.sh bootable/efi/hybrid
+
+Binaries Not Found:
+  ✓ Run: ./start.sh build
+  ✓ Check: ./start.sh status
+
+Can't See Boot Messages:
+  ✓ Run: ./start.sh slow
+  ✓ Reduces CPU speed to 50MHz for easier observation
+
+Need Help:
+  $ ./start.sh info              # Bootable media guide
+  $ ./start.sh help              # All commands
+
+================================================================================
+                            WHAT'S NEW
+================================================================================
+
+✨ NEW Features (This Session):
+  1. Hybrid bootable USB support (BIOS + EFI)
+  2. EFI bootable USB support (GPT partition)
+  3. Interactive bootable media selection guide (./start.sh info)
+  4. Comprehensive documentation (BOOTABLE_README.md)
+  5. Three bootable modes integrated into start.sh
+
+🔧 Now You Can:
+  • Create USB sticks that boot on both BIOS and EFI systems
+  • Easily choose which boot mode to use (BIOS, EFI, or Hybrid)
+  • Get guided help on which option to choose (./start.sh info)
+  • Boot the bootloader on any computer you want
+
+================================================================================
+
+For detailed information, see:
+  • BOOTABLE_README.md - Complete bootable media guide
+  • ./start.sh help     - All available commands
+  • ./start.sh info     - Bootable media selection guide
+
+Ready to create bootable media! 🚀
+
+================================================================================

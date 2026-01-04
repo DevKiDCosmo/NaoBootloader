@@ -36,9 +36,13 @@ show_help() {
     echo -e "    ${COLOR_BRIGHT_GREEN}build${COLOR_RESET}           Build all bootloader components"
     echo -e "    ${COLOR_BRIGHT_GREEN}clean${COLOR_RESET}           Clean build artifacts"
     echo -e "    ${COLOR_BRIGHT_GREEN}test${COLOR_RESET}            Run individual component tests (QEMU)"
+    echo -e "    ${COLOR_BRIGHT_GREEN}slow${COLOR_RESET}            Run slow-motion tests (50MHz - for debugging)"
     echo -e "    ${COLOR_BRIGHT_GREEN}qemu${COLOR_RESET}            Quick QEMU test with all components"
     echo -e "    ${COLOR_BRIGHT_GREEN}virtual${COLOR_RESET}         Create/manage virtual test drives"
-    echo -e "    ${COLOR_BRIGHT_GREEN}bootable${COLOR_RESET}        Create bootable USB drive (macOS)"
+    echo -e "    ${COLOR_BRIGHT_GREEN}bootable${COLOR_RESET}        Create BIOS bootable USB drive (macOS)"
+    echo -e "    ${COLOR_BRIGHT_GREEN}efi${COLOR_RESET}             Create EFI bootable USB drive (modern systems)"
+    echo -e "    ${COLOR_BRIGHT_GREEN}hybrid${COLOR_RESET}          Create hybrid bootable USB (BIOS + EFI)"
+    echo -e "    ${COLOR_BRIGHT_GREEN}info${COLOR_RESET}            Show bootable media options and guide"
     echo -e "    ${COLOR_BRIGHT_GREEN}inspect${COLOR_RESET}         Inspect virtual drive contents"
     echo -e "    ${COLOR_BRIGHT_GREEN}cleanup${COLOR_RESET}         Clean up ghost disk images"
     echo -e "    ${COLOR_BRIGHT_GREEN}status${COLOR_RESET}          Show project status"
@@ -47,9 +51,12 @@ show_help() {
     echo -e "${COLOR_BRIGHT_WHITE}EXAMPLES:${COLOR_RESET}"
     echo -e "    ${COLOR_CYAN}./start.sh build${COLOR_RESET}              # Build all components"
     echo -e "    ${COLOR_CYAN}./start.sh test${COLOR_RESET}               # Run interactive tests"
+    echo -e "    ${COLOR_CYAN}./start.sh slow${COLOR_RESET}               # Run slow-motion debugging"
     echo -e "    ${COLOR_CYAN}./start.sh qemu${COLOR_RESET}               # Quick QEMU test"
     echo -e "    ${COLOR_CYAN}./start.sh virtual 1g${COLOR_RESET}         # Create 1GB virtual drive"
-    echo -e "    ${COLOR_CYAN}./start.sh bootable${COLOR_RESET}           # Create bootable USB (requires sudo)"
+    echo -e "    ${COLOR_CYAN}./start.sh bootable${COLOR_RESET}           # Create BIOS bootable USB (requires sudo)"
+    echo -e "    ${COLOR_CYAN}./start.sh efi${COLOR_RESET}                # Create EFI bootable USB (requires sudo)"
+    echo -e "    ${COLOR_CYAN}./start.sh hybrid${COLOR_RESET}             # Create hybrid USB (BIOS+EFI, requires sudo)"
     echo -e "    ${COLOR_CYAN}./start.sh status${COLOR_RESET}             # Show build status"
     echo ""
     echo -e "${COLOR_BRIGHT_WHITE}TESTING:${COLOR_RESET}"
@@ -170,7 +177,7 @@ cmd_virtual() {
 }
 
 cmd_bootable() {
-    print_section "Create Bootable Drive"
+    print_section "Create BIOS Bootable Drive"
     
     if ! is_root; then
         log_warn "This command requires sudo privileges"
@@ -179,6 +186,34 @@ cmd_bootable() {
     fi
     
     bash "$SCRIPT_DIR/scripts/macos_bootable.sh"
+}
+
+cmd_efi() {
+    print_section "Create EFI Bootable Drive"
+    
+    if ! is_root; then
+        log_warn "This command requires sudo privileges"
+        log_info "Run: sudo ./start.sh efi"
+        return 1
+    fi
+    
+    bash "$SCRIPT_DIR/scripts/create_efi_bootable.sh"
+}
+
+cmd_hybrid() {
+    print_section "Create Hybrid Bootable Drive (BIOS + EFI)"
+    
+    if ! is_root; then
+        log_warn "This command requires sudo privileges"
+        log_info "Run: sudo ./start.sh hybrid"
+        return 1
+    fi
+    
+    bash "$SCRIPT_DIR/scripts/create_hybrid_bootable.sh"
+}
+
+cmd_info() {
+    bash "$SCRIPT_DIR/scripts/bootable_info.sh"
 }
 
 cmd_inspect() {
@@ -205,6 +240,12 @@ cmd_cleanup() {
     bash "$SCRIPT_DIR/scripts/cleanup_ghost_disks.sh" --clean
 }
 
+cmd_slow() {
+    print_section "Slow-Motion Bootloader Test"
+    
+    bash "$SCRIPT_DIR/scripts/test_slow.sh"
+}
+
 # ==============================================================================
 # MAIN
 # ==============================================================================
@@ -223,6 +264,9 @@ main() {
         test|--test)
             cmd_test "$@"
             ;;
+        slow)
+            cmd_slow "$@"
+            ;;
         qemu)
             cmd_qemu "$@"
             ;;
@@ -231,6 +275,15 @@ main() {
             ;;
         bootable)
             cmd_bootable "$@"
+            ;;
+        efi)
+            cmd_efi "$@"
+            ;;
+        hybrid)
+            cmd_hybrid "$@"
+            ;;
+        info)
+            cmd_info "$@"
             ;;
         inspect)
             cmd_inspect "$@"

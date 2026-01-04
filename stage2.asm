@@ -30,7 +30,7 @@ stage2_start:
     ; Load kernel from disk (starting at sector 5)
     ; BIOS sectors: 1=boot, 3-4=stage2, 5+=kernel
     mov ah, 0x02        ; BIOS read sector
-    mov al, 32          ; Read 32 sectors (16KB) - enough for kernel
+    mov al, 80          ; Read 80 sectors (40KB) to allow larger payloads
     mov ch, 0           ; Cylinder 0
     mov cl, 5           ; Start at sector 5 (dd seek=4 writes to sector 5 in BIOS)
     mov dh, 0           ; Head 0
