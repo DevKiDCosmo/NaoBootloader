@@ -137,7 +137,7 @@ flowchart TD
     A[Power On] --> B{Firmware Type?}
     B -->|BIOS| C[BIOS POST]
     B -->|EFI| D[UEFI Firmware]
-    B -->|Nao| NAOFIRM[Nao Firmware]
+    B -->|Nao| NAOFIRM[Shinsei/Kiban/Shingen/Nao Firmware]
 
    NAOFIRM --> NAOFIRM2[Load from NaoConfig Files]
    NAOFIRM2 --> LOADER[Stage 0: Bootloader 10240 bytes @ Sector 1024+]
@@ -216,6 +216,13 @@ Nao Bootloader can also be like GRUB for booting to multiple OS.
 Scripts should also be implemented that controls time etc.
 
 There should be two access point then for the Bootloader Manager of Nao. First the Immediately Entry for direct use of Operation System and the second booting point to booting to booting manager.
+
+The names for the firmware:
+- Shinsei 新生 - Role: The Secure, Trusted Root of the System
+- Kiban 基盤 - Role: The Stable, Modular Platform Layer
+- Shingen 真源 - Role: The Resource‑Oriented, High‑Flexibility Environment
+
+On a mainboard/motherboard there can be more than one firmware flashed with Nao. But should you, no. At least in the mean of yours. Use: Genkai 限界. It uses all the feature of the other firmwares. So no compromises are done.
 
 ---
 
